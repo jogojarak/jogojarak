@@ -101,15 +101,17 @@ def cek_saldo_dan_status(playwright, situs, userid, bataswd=""):
 
         time.sleep(3)
 
+        # Ambil saldo
         saldo_text = page.locator(".myPurse span i").inner_text().strip()
         saldo_value = parse_saldo(saldo_text)
 
+        # Ambil nama permainan terbaru
         page.goto(f"https://{situs}/#/betRecords")
         page.get_by_text("Togel").click()
         page.locator(".list .ls-list-item").first.wait_for(timeout=10000)
         nama_permainan = page.locator(".list .ls-list-item").first.locator("li").nth(2).inner_text().strip()
 
-        status_permainan = "✅ Menang" if "Menang" in nama_permainan else "❌ Tidak menang"
+        status_permainan = "🏆 Menang" if "Menang" in nama_permainan else "🥲 Tidak menang"
 
         if baca_setting("NOTIF_MENANG") == "on":
             kirim_telegram(
@@ -120,6 +122,7 @@ def cek_saldo_dan_status(playwright, situs, userid, bataswd=""):
                 f"⌚ {wib}"
             )
 
+        # === AUTO WD MODE: target.txt ===
         if baca_setting("AUTO_WD_TARGET") == "on" and os.path.exists("target.txt"):
             target_line = baca_file("target.txt")
             if '|' in target_line:
@@ -135,15 +138,17 @@ def cek_saldo_dan_status(playwright, situs, userid, bataswd=""):
                         kirim_telegram(
                             f"<b>[AUTO-WD]</b>\n"
                             f"👤 {userid}\n"
-                            f"💰 Rp {nominal}\n"
+                            f"💸 Rp {nominal}\n"
                             f"📆 {tanggal}\n"
                             f"✅ Status: <b>{status}</b>\n"
                             f"⌚ {wib}"
                         )
 
+        # === AUTO WD MODE: bataswd.txt ===
         if baca_setting("AUTO_WD_BATAS") == "on" and bataswd:
+            batas_str = bataswd
             try:
-                batas_saldo = float(bataswd)
+                batas_saldo = float(batas_str)
                 kelebihan = saldo_value - batas_saldo
                 if kelebihan >= 50000:
                     jumlah_wd = int(kelebihan // 1000 * 1000)
@@ -155,7 +160,7 @@ def cek_saldo_dan_status(playwright, situs, userid, bataswd=""):
                             kirim_telegram(
                                 f"<b>[AUTO-WD]</b>\n"
                                 f"👤 {userid}\n"
-                                f"💰 Rp {jumlah_wd:,.0f}\n"
+                                f"💸 Rp {jumlah_wd:,.0f}\n"
                                 f"📆 {tanggal}\n"
                                 f"✅ Status: <b>{status}</b>\n"
                                 f"⌚ {wib}"
@@ -172,40 +177,6 @@ def cek_saldo_dan_status(playwright, situs, userid, bataswd=""):
 def run(playwright, situs, userid, bet_raw, bet_raw2, config_csv, bataswd):
     cek_saldo_dan_status(playwright, situs, userid, bataswd)
 
-def scrape_nomor_terbaru(playwright, situs, userid):
-    browser = playwright.chromium.launch(headless=True)
-    context = browser.new_context()
-    page = context.new_page()
-
-    page.goto(f"https://{situs}/#/index?category=lottery")
-    try:
-        page.get_by_role("img", name="close").click()
-    except:
-        pass
-
-    with page.expect_popup() as page1_info:
-        page.get_by_role("heading", name="HOKI DRAW").click()
-    page1 = page1_info.value
-
-    page1.get_by_role("textbox", name="-14 digit atau kombinasi huruf").fill(userid)
-    page1.get_by_role("textbox", name="-16 angka atau kombinasi huruf").fill(pw)
-    page1.get_by_text("Masuk").click()
-    time.sleep(2)
-    page1.get_by_role("link", name="Saya Setuju").click()
-    time.sleep(2)
-    page1.get_by_role("link", name="NOMOR HISTORY NOMOR").click()
-    time.sleep(2)
-    page1.locator("#marketSelect").select_option("HKDW")
-    time.sleep(2)
-
-    page1.locator("#historyTable tbody tr").first.wait_for(timeout=10000)
-    nomor = page1.locator("#historyTable tbody tr td").nth(3).inner_text().strip()
-
-    kirim_telegram(f"<b>[SCRAPER]</b>\n🎯 Nomor terbaru: <b>{nomor}</b>\n⌚ {wib}")
-
-    context.close()
-    browser.close()
-
 def main():
     bets = baca_file("multi.txt").splitlines()
     with sync_playwright() as playwright:
@@ -217,14 +188,6 @@ def main():
                 continue
             situs, userid, bet_raw, bet_raw2, config_csv, bataswd = (parts + [""] * 6)[:6]
             run(playwright, situs.strip(), userid.strip(), bet_raw.strip(), bet_raw2.strip(), config_csv.strip(), bataswd.strip())
-
-        if baca_setting("SCRAPER_NOMOR") == "on":
-            first_valid = [b for b in bets if '|' in b and not b.strip().startswith("#")]
-            if first_valid:
-                first_userid = first_valid[0].split('|')[1].strip()
-                first_situs = first_valid[0].split('|')[0].strip()
-                scrape_nomor_terbaru(playwright, first_situs, first_userid)
-
 
 if __name__ == "__main__":
     main()
