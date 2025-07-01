@@ -1,4 +1,4 @@
 # situs|userid|bet3D|bet4D|config|batassaldo
 #jutawan81636.com|jogojarak|1|0|686|3430000
-jutawan81636.com|jogojarak|0|0|6098|3430000
+jutawan81636.com|jogojarak|0|0.2|6098|3430000
 #depobos84478.com|ayasbni|0.2|0|246+780|343000
