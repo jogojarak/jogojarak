@@ -105,6 +105,8 @@ def cek_saldo_dan_status(playwright, situs, userid, bataswd=""):
         saldo_value = parse_saldo(saldo_text)
 
         page.goto(f"https://{situs}/#/betRecords")
+        page.get_by_text("menu").click()
+        page.get_by_text("history taruhan").click()
         page.get_by_text("Togel").click()
         page.locator(".list .ls-list-item").first.wait_for(timeout=10000)
         nama_permainan = page.locator(".list .ls-list-item").first.locator("li").nth(2).inner_text().strip()
